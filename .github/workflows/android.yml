@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-22.04
     timeout-minutes: 45
     env:
-      KOTOBA_DEBUG_KEYSTORE: ${{ runner.temp }}/kotoba-signing/debug.keystore
+      KOTOBA_DEBUG_KEYSTORE: ${{ github.workspace }}/.setup/android-signing/debug.keystore
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -39,7 +39,7 @@ jobs:
           key: voicevox-${{ hashFiles('shared/voicevox-assets.json') }}
       - uses: actions/cache@v4
         with:
-          path: ${{ runner.temp }}/kotoba-signing/debug.keystore
+          path: .setup/android-signing/debug.keystore
           key: kotoba-android-local-debug-signing-v2
       - name: Prepare reusable personal debug signing key
         run: |
