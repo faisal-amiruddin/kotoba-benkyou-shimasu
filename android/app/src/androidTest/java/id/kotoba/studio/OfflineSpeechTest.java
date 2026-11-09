@@ -1,7 +1,12 @@
 package id.kotoba.studio;
 
 import android.content.Context;
-import android.test.InstrumentationTestCase;
+import android.app.Instrumentation;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
+import androidx.test.platform.app.InstrumentationRegistry;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import static org.junit.Assert.*;
 import org.json.*;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
@@ -14,7 +19,9 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
-public class OfflineSpeechTest extends InstrumentationTestCase {
+@RunWith(AndroidJUnit4.class)
+public class OfflineSpeechTest {
+    private Instrumentation getInstrumentation() { return InstrumentationRegistry.getInstrumentation(); }
     private WebView findWeb(View view) {
         if(view instanceof WebView)return (WebView)view;
         if(view instanceof ViewGroup)for(int i=0;i<((ViewGroup)view).getChildCount();i++){WebView found=findWeb(((ViewGroup)view).getChildAt(i));if(found!=null)return found;}
@@ -25,7 +32,7 @@ public class OfflineSpeechTest extends InstrumentationTestCase {
         getInstrumentation().runOnMainSync(()->{WebView web=findWeb(activity.getWindow().getDecorView());if(web==null){latch.countDown();return;}web.evaluateJavascript(script,result->{value.set(result);latch.countDown();});});
         assertTrue(latch.await(15,TimeUnit.SECONDS));return value.get();
     }
-    public void testWebInterfaceSynthesizesWithoutNetwork() throws Exception {
+    @Test public void testWebInterfaceSynthesizesWithoutNetwork() throws Exception {
         Intent intent=new Intent(getInstrumentation().getTargetContext(),MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         MainActivity activity=(MainActivity)getInstrumentation().startActivitySync(intent);
         try {
@@ -40,7 +47,7 @@ public class OfflineSpeechTest extends InstrumentationTestCase {
             assertEquals("true",evaluate(activity,"document.querySelector('#downloadAudio').href.startsWith('blob:')"));
         } finally {getInstrumentation().runOnMainSync(activity::finish);}
     }
-    public void testOfflineVoicesAndPronunciation() throws Exception {
+    @Test public void testOfflineVoicesAndPronunciation() throws Exception {
         Context context=getInstrumentation().getTargetContext();
         File files=ModelStorage.prepare(context,message->{});
         SpeechEngine engine=new SpeechEngine(context,files);
@@ -57,7 +64,7 @@ public class OfflineSpeechTest extends InstrumentationTestCase {
         byte[] original=engine.synthesize(context,base.put("pronunciation","original"));
         assertFalse(Arrays.equals(natural,original));
     }
-    public void testLongVowelsKeepMorasAndAccent() throws Exception {
+    @Test public void testLongVowelsKeepMorasAndAccent() throws Exception {
         JSONObject first=new JSONObject().put("text","イ").put("vowel","i").put("consonant",JSONObject.NULL).put("vowel_length",0.169).put("pitch",5.692);
         JSONObject second=new JSONObject().put("text","イ").put("vowel","i").put("consonant",JSONObject.NULL).put("vowel_length",0.112).put("pitch",5.838);
         JSONObject phrase=new JSONObject().put("accent",2).put("moras",new JSONArray().put(first).put(second));
