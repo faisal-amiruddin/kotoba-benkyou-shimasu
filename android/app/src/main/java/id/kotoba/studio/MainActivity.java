@@ -126,6 +126,7 @@ public final class MainActivity extends Activity {
                 JSONObject response=playerState();
                 if(op.equals("session")&&saved!=null&&PlaybackStore.audio(this,saved)!=null) {
                     response.put("timeline",saved.optJSONArray("timeline"));response.put("url","/playback/"+saved.getString("file"));
+                    response.put("credits",saved.optString("credits",""));
                 }
                 reply(id,200,"application/json",response.toString());
             }catch(Exception error){reply(id,502,"application/json",newError(error));}
@@ -153,7 +154,7 @@ public final class MainActivity extends Activity {
                                 if(!directory.isDirectory()&&!directory.mkdirs())throw new IOException("Tidak dapat menyimpan audio.");
                                 String filename=UUID.randomUUID()+".wav";
                                 java.nio.file.Files.move(upload.file.toPath(),new File(directory,filename).toPath());
-                                saved=new JSONObject().put("file",filename).put("timeline",request.getJSONArray("timeline")).put("positionMs",0);
+                                saved=new JSONObject().put("file",filename).put("timeline",request.getJSONArray("timeline")).put("credits",request.optString("credits","")).put("positionMs",0);
                                 PlaybackStore.write(MainActivity.this,saved);
                             }finally{discard(upload);}
                         } else if(op.equals("session"))saved=PlaybackStore.read(MainActivity.this);

@@ -12,6 +12,8 @@ jobs:
   android:
     runs-on: ubuntu-22.04
     timeout-minutes: 45
+    env:
+      KOTOBA_DEBUG_KEYSTORE: ${{ runner.temp }}/kotoba-signing/debug.keystore
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -37,8 +39,14 @@ jobs:
           key: voicevox-${{ hashFiles('shared/voicevox-assets.json') }}
       - uses: actions/cache@v4
         with:
-          path: ~/.android/debug.keystore
-          key: kotoba-android-local-debug-signing-v1
+          path: ${{ runner.temp }}/kotoba-signing/debug.keystore
+          key: kotoba-android-local-debug-signing-v2
+      - name: Prepare reusable personal debug signing key
+        run: |
+          mkdir -p "$(dirname "$KOTOBA_DEBUG_KEYSTORE")"
+          if [ ! -f "$KOTOBA_DEBUG_KEYSTORE" ]; then
+            keytool -genkeypair -keystore "$KOTOBA_DEBUG_KEYSTORE" -storepass android -alias androiddebugkey -keypass android -dname "CN=Kotoba Local,OU=Android,O=Kotoba,C=ID" -keyalg RSA -keysize 2048 -validity 10000
+          fi
       - name: Test local web and pronunciation rules
         run: |
           npm ci
@@ -62,7 +70,7 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -memory 4096
           script: |
             gradle -p android --no-daemon :app:connectedDebugAndroidTest
-            adb exec-out run-as id.kotoba.studio cat cache/android-player.png > android/android-player.png
+            adb pull /sdcard/Pictures/KotobaTests/android-player.png android/android-player.png
       - name: Name APK
         run: cp android/app/build/outputs/apk/debug/app-debug.apk android/app/build/outputs/apk/debug/kotoba-android-local.apk
       - uses: actions/upload-artifact@v4

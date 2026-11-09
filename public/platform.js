@@ -57,6 +57,7 @@
     constructor(element) {
       super();
       this.state = {loaded:false,position:0,duration:0,paused:true,ended:false,rate:1};
+      this.snapshotTime = performance.now();
       this.defaultPlaybackRate = 1;
       element.hidden = true;
       const controls = document.createElement('div');
@@ -74,6 +75,7 @@
     apply(state) {
       const before = this.state;
       this.state = {...before,...state};
+      this.snapshotTime = performance.now();
       const format = seconds => `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2,'0')}`;
       this.toggle.disabled = !this.state.loaded;
       this.toggle.textContent = this.paused ? 'Putar' : 'Jeda';
@@ -87,16 +89,19 @@
     }
     async command(op, data) {const state = await playerCommand(op,data);this.apply(state);return state;}
     async refresh() {try {await this.command('state');} catch(error) {this.error(error);}}
-    async setSource(blob, timeline) {
+    async setSource(blob, timeline, credits) {
       const handle = await upload(blob,'playback.wav');
-      try {await this.command('load',{handle,timeline});}
+      try {await this.command('load',{handle,timeline,credits});}
       catch(error) {window.KotobaAndroid.cancelSave(handle);throw error;}
       for (let i = 0; i < 40 && !this.duration; i++) {await new Promise(resolve => setTimeout(resolve,250));await this.command('state');}
       if (!this.duration) throw new Error('Pemutar belum dapat membaca audio WAV.');
       await this.command('rate',{rate:this.defaultPlaybackRate});
     }
     async restore() {return this.command('session');}
-    get currentTime() {return this.state.position;}
+    get currentTime() {
+      const elapsed = this.state.playing && !this.state.ended ? (performance.now() - this.snapshotTime) / 1000 * this.state.rate : 0;
+      return Math.min(this.duration || Infinity, this.state.position + elapsed);
+    }
     set currentTime(seconds) {if (this.state.loaded) this.command('seek',{seconds}).catch(error => this.error(error));}
     get duration() {return this.state.duration;}
     get paused() {return this.state.paused;}

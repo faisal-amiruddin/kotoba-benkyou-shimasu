@@ -321,6 +321,16 @@ ATURAN FORMAT:
     const intonationEl = document.getElementById('voicevoxIntonation');
     const pronunciationEl = document.getElementById('voicevoxPronunciation');
     let creditsUrl = null;
+    function showCredits(credits) {
+      const creditsEl = document.getElementById('resultCredits');
+      const creditsDownload = document.getElementById('downloadCredits');
+      creditsEl.textContent = credits ? `Kredit saat membagikan audio: ${credits.replace(/\n/g, ' · ')}` : '';
+      creditsEl.style.display = credits ? 'block' : 'none';
+      creditsDownload.style.display = credits ? 'inline-flex' : 'none';
+      if (creditsUrl) URL.revokeObjectURL(creditsUrl);
+      creditsUrl = credits ? URL.createObjectURL(new Blob([credits + '\n'], {type:'text/plain;charset=utf-8'})) : null;
+      if (creditsUrl) creditsDownload.href = creditsUrl;
+    }
     try {
       const saved = localStorage.getItem('kotoba-voicevox-intonation');
       if (saved !== null && Number.isFinite(Number(saved)) && Number(saved) >= 0 && Number(saved) <= 2) intonationEl.value = saved;
@@ -511,10 +521,14 @@ ATURAN FORMAT:
 
         progressLabel.textContent = 'Menyambungkan audio dan subtitle…';
         setStatus('Semua baris selesai. Menyiapkan audio WAV…');
+        const credits = engineEl.value === 'voicevox' ? [...new Set(result.parsed.map(line => {
+          const voice = line.speaker === 'cowo' ? maleVoiceEl.value : femaleVoiceEl.value;
+          return [...maleVoices, ...femaleVoices].find(item => item.ShortName === voice)?.Credit;
+        }).filter(Boolean))].join('\n') : '';
         const mergedBlob = mergeWav(chunks, context.sampleRate);
         if (currentAudioUrl) URL.revokeObjectURL(currentAudioUrl);
         currentAudioUrl = URL.createObjectURL(mergedBlob);
-        if (audioPlayer.setSource) await audioPlayer.setSource(mergedBlob, nextTimeline);
+        if (audioPlayer.setSource) await audioPlayer.setSource(mergedBlob, nextTimeline, credits);
         else audioPlayer.src = currentAudioUrl;
         timeline = nextTimeline;
         activeSubtitle = -1;
@@ -524,18 +538,7 @@ ATURAN FORMAT:
         const stamp = [now.getFullYear(), String(now.getMonth() + 1).padStart(2, '0'), String(now.getDate()).padStart(2, '0'), '-', String(now.getHours()).padStart(2, '0'), String(now.getMinutes()).padStart(2, '0')].join('');
         downloadAudio.download = `japanese-dialog-${stamp}.wav`;
         document.getElementById('audioMeta').textContent = `WAV · ${total} kalimat · ${(mergedBlob.size / 1024 / 1024).toFixed(2)} MB`;
-        const credits = engineEl.value === 'voicevox' ? [...new Set(result.parsed.map(line => {
-          const voice = line.speaker === 'cowo' ? maleVoiceEl.value : femaleVoiceEl.value;
-          return [...maleVoices, ...femaleVoices].find(item => item.ShortName === voice)?.Credit;
-        }).filter(Boolean))].join('\n') : '';
-        const creditsEl = document.getElementById('resultCredits');
-        const creditsDownload = document.getElementById('downloadCredits');
-        creditsEl.textContent = credits ? `Kredit saat membagikan audio: ${credits.replace(/\n/g, ' · ')}` : '';
-        creditsEl.style.display = credits ? 'block' : 'none';
-        creditsDownload.style.display = credits ? 'inline-flex' : 'none';
-        if (creditsUrl) URL.revokeObjectURL(creditsUrl);
-        creditsUrl = credits ? URL.createObjectURL(new Blob([credits + '\n'], {type:'text/plain;charset=utf-8'})) : null;
-        if (creditsUrl) creditsDownload.href = creditsUrl;
+        showCredits(credits);
         progressBar.style.width = '100%';
         progressPercent.textContent = '100%';
         progressLabel.textContent = 'Selesai';
@@ -575,5 +578,6 @@ ATURAN FORMAT:
         document.getElementById('audioMeta').textContent = `WAV · ${timeline.length} kalimat · audio terakhir`;
         downloadAudio.href = session.url;
         downloadAudio.download = 'japanese-dialog.wav';
+        showCredits(session.credits || '');
       }).catch(() => {});
     }

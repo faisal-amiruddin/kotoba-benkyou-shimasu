@@ -18,6 +18,7 @@ android {
     externalNativeBuild { cmake { path 'src/main/cpp/CMakeLists.txt'; version '3.22.1' } }
     packaging { jniLibs { useLegacyPackaging true; keepDebugSymbols += ['**/libvoicevox_core.so','**/libvoicevox_onnxruntime.so'] } }
     androidResources { noCompress += ['vvm'] }
+    signingConfigs { debug { if (System.getenv('KOTOBA_DEBUG_KEYSTORE')) storeFile file(System.getenv('KOTOBA_DEBUG_KEYSTORE')) } }
     buildTypes { debug { debuggable true }; release { minifyEnabled false } }
 }
 dependencies {

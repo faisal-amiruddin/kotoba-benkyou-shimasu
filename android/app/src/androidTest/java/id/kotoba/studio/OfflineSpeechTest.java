@@ -5,7 +5,9 @@ import android.app.Instrumentation;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.content.ComponentName;
+import android.content.ContentValues;
 import android.graphics.Bitmap;
+import android.provider.MediaStore;
 import androidx.media3.common.Player;
 import androidx.media3.session.MediaController;
 import androidx.media3.session.SessionToken;
@@ -58,7 +60,9 @@ public class OfflineSpeechTest {
             assertEquals("true",evaluate(activity,"document.querySelector('#downloadAudio').href.startsWith('blob:')"));
             evaluate(activity,"document.querySelector('#resultPanel').scrollIntoView();true");
             Thread.sleep(500);
-            try(FileOutputStream out=new FileOutputStream(new File(activity.getCacheDir(),"android-player.png"))) {
+            ContentValues image=new ContentValues();image.put(MediaStore.Images.Media.DISPLAY_NAME,"android-player.png");image.put(MediaStore.Images.Media.MIME_TYPE,"image/png");image.put(MediaStore.Images.Media.RELATIVE_PATH,"Pictures/KotobaTests");
+            android.net.Uri screenshot=activity.getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,image);
+            try(java.io.OutputStream out=activity.getContentResolver().openOutputStream(screenshot)) {
                 getInstrumentation().getUiAutomation().takeScreenshot().compress(Bitmap.CompressFormat.PNG,100,out);
             }
             getInstrumentation().runOnMainSync(()->{player.seekTo(0);player.setRepeatMode(Player.REPEAT_MODE_ONE);player.play();});
@@ -81,10 +85,10 @@ public class OfflineSpeechTest {
             getInstrumentation().getUiAutomation().executeShellCommand("wm dismiss-keyguard").close();
             getInstrumentation().getTargetContext().startActivity(new Intent(getInstrumentation().getTargetContext(),MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_SINGLE_TOP));
             Thread.sleep(500);
-            getInstrumentation().runOnMainSync(()->{player.pause();player.seekTo(1000);});
+            getInstrumentation().runOnMainSync(()->{player.pause();player.seekTo(Math.max(0,player.getDuration()-500));});
             Thread.sleep(700);
             assertTrue("Pause from media controller must update the UI",evaluate(activity,"window.KotobaMobile.player.paused").equals("true"));
-            assertTrue("Subtitles must resync after returning",evaluate(activity,"document.querySelector('#subtitleTranslation').textContent.length>0").equals("true"));
+            assertEquals("Subtitles must resync to the second turn after returning","\"Ayo belajar bahasa Jepang.\"",evaluate(activity,"document.querySelector('#subtitleTranslation').textContent"));
         } finally {
             getInstrumentation().runOnMainSync(()->{player.pause();player.setRepeatMode(Player.REPEAT_MODE_OFF);player.clearMediaItems();MediaController.releaseFuture(connection);activity.finish();});
         }
