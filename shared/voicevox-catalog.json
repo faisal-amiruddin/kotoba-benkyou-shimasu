@@ -1,0 +1,82 @@
+{
+  "characters": {
+    "四国めたん": [
+      "Shikoku Metan",
+      "Female"
+    ],
+    "ずんだもん": [
+      "Zundamon",
+      "Female"
+    ],
+    "春日部つむぎ": [
+      "Kasukabe Tsumugi",
+      "Female"
+    ],
+    "雨晴はう": [
+      "Amehare Hau",
+      "Female"
+    ],
+    "玄野武宏": [
+      "Kurono Takehiro",
+      "Male"
+    ],
+    "剣崎雌雄": [
+      "Kenzaki Mesuo",
+      "Male"
+    ],
+    "青山龍星": [
+      "Ryusei Aoyama",
+      "Male"
+    ],
+    "黒沢冴白": [
+      "Kurosawa Kohaku",
+      "Male"
+    ],
+    "もち子さん": [
+      "Mochiko-san",
+      "Female"
+    ],
+    "後鬼": [
+      "Goki",
+      "Female"
+    ],
+    "No.7": [
+      "No.7",
+      "Female"
+    ],
+    "中部つるぎ": [
+      "Chubu Tsurugi",
+      "Female"
+    ]
+  },
+  "styles": {
+    "ノーマル": "Normal",
+    "あまあま": "Manis",
+    "ツンツン": "Ketus",
+    "セクシー": "Sensual",
+    "熱血": "Bersemangat",
+    "不機嫌": "Kesal",
+    "喜び": "Gembira",
+    "しっとり": "Lembut",
+    "かなしみ": "Sedih",
+    "囁き": "Berbisik",
+    "セクシー／あん子": "Sensual / Anko",
+    "泣き": "Menangis",
+    "怒り": "Marah",
+    "のんびり": "Santai",
+    "人間ver.": "Wujud manusia",
+    "ぬいぐるみver.": "Wujud boneka",
+    "人間（怒り）ver.": "Wujud manusia · marah",
+    "鬼ver.": "Wujud oni",
+    "アナウンス": "Pengumuman",
+    "読み聞かせ": "Bercerita",
+    "ヒソヒソ": "Bisik-bisik",
+    "おどおど": "Gugup",
+    "絶望と敗北": "Putus asa / kalah",
+    "ヘロヘロ": "Lemas",
+    "なみだめ": "Berkaca-kaca"
+  },
+  "credits": {
+    "もち子さん": "VOICEVOX:もち子さん(cv明日葉よもぎ)"
+  }
+}

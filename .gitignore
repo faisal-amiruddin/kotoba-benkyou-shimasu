@@ -1,0 +1,17 @@
+node_modules/
+.runtime/
+.setup/
+outputs/
+.gradle/
+.cxx/
+**/build/
+**/__pycache__/
+*.pyc
+local.properties
+*.keystore
+*.jks
+android/app/src/main/assets/voicevox/
+android/app/src/main/assets/web/
+android/app/src/main/jniLibs/
+android/app/src/main/cpp/vendor/
+android/test-assets/

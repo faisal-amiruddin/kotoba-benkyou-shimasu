@@ -1,0 +1,14 @@
+{
+  "name": "kotoba-studio-edge",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Local Japanese dialogue learning studio using Microsoft Edge Read Aloud via msedge-tts.",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "msedge-tts": "2.1.1"
+  }
+}

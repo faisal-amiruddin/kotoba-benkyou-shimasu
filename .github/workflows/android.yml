@@ -1,0 +1,76 @@
+name: Build Android local APK
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  android:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.10.2'
+      - uses: android-actions/setup-android@v3
+      - uses: actions/cache@v4
+        with:
+          path: .setup/android-build-cache
+          key: voicevox-${{ hashFiles('shared/voicevox-assets.json') }}
+      - uses: actions/cache@v4
+        with:
+          path: ~/.android/debug.keystore
+          key: kotoba-android-local-debug-signing-v1
+      - name: Test local web and pronunciation rules
+        run: |
+          npm ci
+          npm test
+          python -m unittest discover -s tests -p '*_test.py'
+      - name: Prepare official offline models and Android native libraries
+        run: python scripts/prepare_android.py
+      - name: Install native build dependencies
+        run: sdkmanager "platforms;android-35" "build-tools;35.0.0" "ndk;27.2.12479018" "cmake;3.22.1"
+      - name: Build installable APK and Android tests
+        run: gradle -p android --no-daemon :app:assembleDebug :app:assembleDebugAndroidTest
+      - name: Enable emulator acceleration
+        run: sudo chmod 666 /dev/kvm
+      - name: Test actual offline synthesis in Android
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          target: google_apis
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -memory 4096
+          script: gradle -p android --no-daemon :app:connectedDebugAndroidTest
+      - name: Name APK
+        run: cp android/app/build/outputs/apk/debug/app-debug.apk android/app/build/outputs/apk/debug/kotoba-android-local.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: kotoba-android-local-apk
+          path: android/app/build/outputs/apk/debug/kotoba-android-local.apk
+          compression-level: 0
+          retention-days: 30
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: android-test-reports
+          path: |
+            android/app/build/reports/androidTests/
+            android/app/build/outputs/androidTest-results/

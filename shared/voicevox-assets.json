@@ -1,0 +1,85 @@
+{
+  "coreVersion": "0.17.1",
+  "modelsVersion": "0.17.1",
+  "models": {
+    "0.vvm": {
+      "url": "https://github.com/VOICEVOX/voicevox_vvm/releases/download/0.17.1/0.vvm",
+      "sha256": "ecd35374d4182cd883cba5040376f7f888cc6ba248b1c2f4cea07cdb34bb1318",
+      "size": 59308488
+    },
+    "15.vvm": {
+      "url": "https://github.com/VOICEVOX/voicevox_vvm/releases/download/0.17.1/15.vvm",
+      "sha256": "c29b0c0f8e332fcedc2a5de4b4426feb75fc9f587c314da99af8dbc964287221",
+      "size": 67265793
+    },
+    "16.vvm": {
+      "url": "https://github.com/VOICEVOX/voicevox_vvm/releases/download/0.17.1/16.vvm",
+      "sha256": "545a2365dbb3f457d2ee9e24b45313968aa4c8351d513f3a79d9922a17569cab",
+      "size": 59303880
+    },
+    "18.vvm": {
+      "url": "https://github.com/VOICEVOX/voicevox_vvm/releases/download/0.17.1/18.vvm",
+      "sha256": "33e5177ebbe1ec5829769c1017f1294641dbf22c43cd2af4896ae0738a14ed13",
+      "size": 62519486
+    },
+    "19.vvm": {
+      "url": "https://github.com/VOICEVOX/voicevox_vvm/releases/download/0.17.1/19.vvm",
+      "sha256": "b9e1c5ddd5b418a6f1d6377d7d00df32c682b580ac9d326675ba4e0b7bb4fc3d",
+      "size": 60021787
+    },
+    "4.vvm": {
+      "url": "https://github.com/VOICEVOX/voicevox_vvm/releases/download/0.17.1/4.vvm",
+      "sha256": "716d2900f6b93ba22119af0e236c32fdbf6fea81c519b5d4830afcb2db349522",
+      "size": 59304904
+    },
+    "6.vvm": {
+      "url": "https://github.com/VOICEVOX/voicevox_vvm/releases/download/0.17.1/6.vvm",
+      "sha256": "975d29f225cf605b0e75a0bb66f3f952821b16bbfa49a3a9b96a7688bf21abbe",
+      "size": 59304854
+    },
+    "7.vvm": {
+      "url": "https://github.com/VOICEVOX/voicevox_vvm/releases/download/0.17.1/7.vvm",
+      "sha256": "d8e3bc97610805901fb7647226a233fe15056f30d1f91d270895c60198625569",
+      "size": 58326212
+    },
+    "README.txt": {
+      "url": "https://github.com/VOICEVOX/voicevox_vvm/releases/download/0.17.1/README.txt",
+      "sha256": "5f22fc4a915a3fa07eff3422bfc36ee4ecdd7cdc8aa34b4970c4b9cf8c109354",
+      "size": 27621
+    },
+    "TERMS.txt": {
+      "url": "https://github.com/VOICEVOX/voicevox_vvm/releases/download/0.17.1/TERMS.txt",
+      "sha256": "9c0caf98b31ef82e3686e8fca39d53c85965059d2206be3c83efc3751d32c83a",
+      "size": 15990
+    }
+  },
+  "native": {
+    "arm64-v8a": {
+      "core": {
+        "url": "https://github.com/VOICEVOX/voicevox_core/releases/download/0.17.1/voicevox_core-android-arm64-0.17.1.zip",
+        "sha256": "069f29018ea27d939e3198ef34592a489181ba3d0287819f80c518963c639d37",
+        "size": 1306346
+      },
+      "onnxruntime": {
+        "url": "https://github.com/VOICEVOX/onnxruntime-builder/releases/download/voicevox_onnxruntime-1.17.3/voicevox_onnxruntime-android-arm64-1.17.3.tgz",
+        "sha256": "516a992cec029d4414260b602f38f388423517221ad5f81f0e1da4ada7104c60"
+      }
+    },
+    "x86_64": {
+      "core": {
+        "url": "https://github.com/VOICEVOX/voicevox_core/releases/download/0.17.1/voicevox_core-android-x86_64-0.17.1.zip",
+        "sha256": "43e8ef75b199491b6e3126be5f4328542b6a8d3a0984c5e98931b696d752cdc2",
+        "size": 1366415
+      },
+      "onnxruntime": {
+        "url": "https://github.com/VOICEVOX/onnxruntime-builder/releases/download/voicevox_onnxruntime-1.17.3/voicevox_onnxruntime-android-x64-1.17.3.tgz",
+        "sha256": "95f48afe11706476cedcea51b9b59f4f5dab3ec1e2f509fcf74a6230ee4b7d8b"
+      }
+    }
+  },
+  "dictionary": {
+    "url": "https://github.com/r9y9/open_jtalk/releases/download/v1.11.1/open_jtalk_dic_utf_8-1.11.tar.gz",
+    "sha256": "fe6ba0e43542cef98339abdffd903e062008ea170b04e7e2a35da805902f382a",
+    "size": 23646843
+  }
+}

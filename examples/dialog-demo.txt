@@ -1,0 +1,6 @@
+{cowo[1]} こんにちは。
+{romaji[1]} Konnichiwa.
+{translate[1]} Halo.
+{cewe[2]} お元気ですか？
+{romaji[2]} Ogenki desu ka?
+{translate[2]} Apa kabar?
