@@ -2,6 +2,7 @@ package id.kotoba.studio;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.content.ComponentName;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
@@ -9,6 +10,10 @@ import android.webkit.*;
 import android.view.*;
 import android.widget.*;
 import androidx.webkit.WebViewAssetLoader;
+import androidx.media3.common.Player;
+import androidx.media3.session.MediaController;
+import androidx.media3.session.SessionToken;
+import com.google.common.util.concurrent.ListenableFuture;
 import java.io.*;
 import java.util.*;
 import java.util.concurrent.*;
@@ -24,12 +29,16 @@ public final class MainActivity extends Activity {
     private FrameLayout root;
     private TextView progress;
     private Save choosingSave;
+    private MediaController controller;
+    private ListenableFuture<MediaController> controllerFuture;
     private static final class Save {
         File file; FileOutputStream stream; String name,mime; long bytes;
         Save(File file,String name,String mime) throws Exception {this.file=file;this.name=name;this.mime=mime;stream=new FileOutputStream(file);}
     }
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
+        controllerFuture=new MediaController.Builder(this,new SessionToken(this,new ComponentName(this,PlaybackService.class))).buildAsync();
+        controllerFuture.addListener(()->{try{controller=controllerFuture.get();}catch(Exception ignored){}},this::runOnUiThread);
         root=new FrameLayout(this); root.setBackgroundColor(Color.rgb(247,245,240));
         root.setOnApplyWindowInsetsListener((view,insets)->{view.setPadding(insets.getSystemWindowInsetLeft(),insets.getSystemWindowInsetTop(),insets.getSystemWindowInsetRight(),insets.getSystemWindowInsetBottom());return insets;});
         setContentView(root);
@@ -55,6 +64,10 @@ public final class MainActivity extends Activity {
         web.getSettings().setMediaPlaybackRequiresUserGesture(false);
         web.setBackgroundColor(Color.rgb(247,245,240));
         WebViewAssetLoader loader=new WebViewAssetLoader.Builder()
+            .addPathHandler("/playback/",path->{
+                if(!path.matches("[a-f0-9-]+\\.wav"))return null;
+                try {return new WebResourceResponse("audio/wav",null,new FileInputStream(new File(PlaybackStore.directory(this),path)));}catch(IOException error){return null;}
+            })
             .addPathHandler("/generated/",path->{
                 File file=audioFiles.get("/generated/"+path);
                 try {return file==null?null:new WebResourceResponse("audio/wav",null,new FileInputStream(file));}catch(IOException error){return null;}
@@ -84,12 +97,68 @@ public final class MainActivity extends Activity {
             if(web!=null&&!isDestroyed()) web.evaluateJavascript("window.__kotobaReply("+id+","+status+","+JSONObject.quote(type)+","+JSONObject.quote(body)+")",null);
         });
     }
+    private JSONObject playerState() throws Exception {
+        if(controller==null)throw new IllegalStateException("Pemutar audio sedang disiapkan. Coba sebentar lagi.");
+        return new JSONObject().put("loaded",controller.getMediaItemCount()>0)
+            .put("position",controller.getCurrentPosition()/1000.0).put("duration",Math.max(0,controller.getDuration())/1000.0)
+            .put("paused",!controller.getPlayWhenReady()).put("playing",controller.isPlaying())
+            .put("ended",controller.getPlaybackState()==Player.STATE_ENDED).put("rate",controller.getPlaybackParameters().speed)
+            .put("error",controller.getPlayerError()==null?JSONObject.NULL:controller.getPlayerError().getMessage());
+    }
+    private void playerRequest(int id,JSONObject request,JSONObject saved) {
+        runOnUiThread(()->{
+            try {
+                if(controller==null)throw new IllegalStateException("Pemutar audio sedang disiapkan. Coba sebentar lagi.");
+                String op=request.optString("op","state");
+                switch(op) {
+                    case "load":
+                        controller.pause();controller.stop();
+                        controller.setMediaItem(PlaybackStore.item(PlaybackStore.audio(this,saved)));controller.prepare();
+                        for(File file:PlaybackStore.directory(this).listFiles())if(file.getName().endsWith(".wav")&&!file.getName().equals(saved.getString("file")))file.delete();
+                        break;
+                    case "play": if(controller.getPlaybackState()==Player.STATE_ENDED)controller.seekTo(0);controller.play();break;
+                    case "pause": controller.pause();break;
+                    case "seek": double seconds=request.getDouble("seconds");if(!Double.isFinite(seconds)||seconds<0)throw new IllegalArgumentException("Posisi audio tidak valid.");controller.seekTo((long)(seconds*1000));break;
+                    case "rate": double rate=request.getDouble("rate");if(!Double.isFinite(rate)||rate<0.5||rate>2)throw new IllegalArgumentException("Tempo putar tidak valid.");controller.setPlaybackSpeed((float)rate);break;
+                    case "state": case "session": break;
+                    default: throw new IllegalArgumentException("Kontrol audio tidak dikenal.");
+                }
+                JSONObject response=playerState();
+                if(op.equals("session")&&saved!=null&&PlaybackStore.audio(this,saved)!=null) {
+                    response.put("timeline",saved.optJSONArray("timeline"));response.put("url","/playback/"+saved.getString("file"));
+                }
+                reply(id,200,"application/json",response.toString());
+            }catch(Exception error){reply(id,502,"application/json",newError(error));}
+        });
+    }
+    private String newError(Throwable error) {return "{\"error\":"+JSONObject.quote(error.getMessage()==null?"Gagal memproses audio lokal.":error.getMessage())+"}";}
     private final class Bridge {
         @JavascriptInterface public void request(int id,String path,String body) {
             if(path==null||body==null||body.length()>1024*1024) {reply(id,400,"application/json","{\"error\":\"Permintaan tidak valid.\"}");return;}
             worker.execute(()->{
                 try {
-                    if(path.equals("/api/engines")) {
+                    if(path.equals("/api/player")) {
+                        JSONObject request=new JSONObject(body),saved=null;
+                        String op=request.optString("op","state");
+                        if(op.equals("load")) {
+                            Save upload=saves.remove(request.getString("handle"));
+                            if(upload==null)throw new IOException("File audio belum disiapkan.");
+                            try {
+                                upload.stream.close();
+                                try(RandomAccessFile input=new RandomAccessFile(upload.file,"r")) {
+                                    if(input.length()<44||input.readInt()!=0x52494646)throw new IOException("Audio WAV tidak valid.");
+                                    input.seek(8);if(input.readInt()!=0x57415645)throw new IOException("Audio WAV tidak valid.");
+                                }
+                                File directory=PlaybackStore.directory(MainActivity.this);
+                                if(!directory.isDirectory()&&!directory.mkdirs())throw new IOException("Tidak dapat menyimpan audio.");
+                                String filename=UUID.randomUUID()+".wav";
+                                java.nio.file.Files.move(upload.file.toPath(),new File(directory,filename).toPath());
+                                saved=new JSONObject().put("file",filename).put("timeline",request.getJSONArray("timeline")).put("positionMs",0);
+                                PlaybackStore.write(MainActivity.this,saved);
+                            }finally{discard(upload);}
+                        } else if(op.equals("session"))saved=PlaybackStore.read(MainActivity.this);
+                        playerRequest(id,request,saved);
+                    } else if(path.equals("/api/engines")) {
                         reply(id,200,"application/json","{\"defaultEngine\":\"voicevox\",\"voicevoxAvailable\":true,\"offlineAvailable\":false,\"onlineAvailable\":false}");
                     } else if(path.equals("/api/voices?engine=voicevox")) {
                         reply(id,200,"application/json",new JSONObject().put("voices",engine.voices()).toString());
@@ -152,6 +221,7 @@ public final class MainActivity extends Activity {
         });
     }
     @Override protected void onDestroy() {
+        if(controllerFuture!=null)MediaController.releaseFuture(controllerFuture);
         if(web!=null){web.removeJavascriptInterface("KotobaAndroid");web.destroy();web=null;}
         worker.shutdown();
         for(File file:audioFiles.values())file.delete();

@@ -29,6 +29,10 @@ Aplikasi ini tidak meminta izin internet dan tidak memerlukan laptop/server.
   1,5 GB ruang kosong untuk APK dan model; APK berukuran besar karena berisi model offline.
 - Pilih suara cowok/cewek dan gayanya, lalu Preview atau Generate.
 - Download WAV dan kredit suara membuka pemilih lokasi penyimpanan Android.
+- Pemutaran memakai layanan media native: audio tetap berjalan saat membuka aplikasi
+  lain atau mengunci layar, dengan play/pause dan seek di kontrol media Android.
+  Subtitle mengikuti posisi pemutar saat kembali ke aplikasi. Audio terakhir disimpan
+  di penyimpanan aplikasi dan dapat dilanjutkan ketika antarmuka dibuka lagi.
 - Untuk generate dialog panjang, tetap buka aplikasi di depan. Pemrosesan dapat
   memakai baterai dan memerlukan waktu; performa HP fisik harus diuji terpisah.
 - Microsoft Narrator offline khusus Windows tidak dibundel dalam aplikasi Android.
@@ -38,7 +42,8 @@ Aplikasi ini tidak meminta izin internet dan tidak memerlukan laptop/server.
 Workflow **Build Android local APK** berjalan saat push ke `main` atau lewat
 Actions → Run workflow. Workflow mengunduh aset resmi dengan SHA-256 yang dipin,
 menjalankan tes web/pelafalan, membangun APK, dan mengetes sintesis serta alur WebView
-pada emulator Android x86_64. Unduh artifact **kotoba-android-local-apk** setelah hijau.
+pada emulator Android x86_64, termasuk pemutaran saat aplikasi di latar belakang dan
+layar mati. Unduh artifact **kotoba-android-local-apk** setelah hijau.
 
 APK ini build debug untuk pemasangan pribadi. Kunci debug disimpan lewat cache CI;
 untuk distribusi produksi gunakan signing key rilis sendiri. Pengujian emulator

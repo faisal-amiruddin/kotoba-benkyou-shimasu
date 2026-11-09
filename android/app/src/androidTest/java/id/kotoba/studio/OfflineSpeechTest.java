@@ -2,6 +2,14 @@ package id.kotoba.studio;
 
 import android.content.Context;
 import android.app.Instrumentation;
+import android.app.Notification;
+import android.app.NotificationManager;
+import android.content.ComponentName;
+import android.graphics.Bitmap;
+import androidx.media3.common.Player;
+import androidx.media3.session.MediaController;
+import androidx.media3.session.SessionToken;
+import com.google.common.util.concurrent.ListenableFuture;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
 import org.junit.Test;
@@ -9,6 +17,7 @@ import org.junit.runner.RunWith;
 import static org.junit.Assert.*;
 import org.json.*;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import android.content.Intent;
@@ -35,6 +44,8 @@ public class OfflineSpeechTest {
     @Test public void testWebInterfaceSynthesizesWithoutNetwork() throws Exception {
         Intent intent=new Intent(getInstrumentation().getTargetContext(),MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         MainActivity activity=(MainActivity)getInstrumentation().startActivitySync(intent);
+        ListenableFuture<MediaController> connection=new MediaController.Builder(getInstrumentation().getTargetContext(),new SessionToken(getInstrumentation().getTargetContext(),new ComponentName(getInstrumentation().getTargetContext(),PlaybackService.class))).buildAsync();
+        MediaController player=connection.get(15,TimeUnit.SECONDS);
         try {
             String ready="";
             for(int i=0;i<90;i++){ready=evaluate(activity,"!!document.querySelector('#generateAudio') && !document.querySelector('#generateAudio').disabled && document.querySelector('#maleVoice').value==='voicevox-11'");if(ready.equals("true"))break;Thread.sleep(1000);}
@@ -45,14 +56,45 @@ public class OfflineSpeechTest {
             for(int i=0;i<120;i++){status=evaluate(activity,"document.querySelector('#statusText').textContent");if(status.contains("Sukses!"))break;Thread.sleep(1000);}
             assertTrue("WebView must decode the native WAV and finish: "+status,status.contains("Sukses!"));
             assertEquals("true",evaluate(activity,"document.querySelector('#downloadAudio').href.startsWith('blob:')"));
-        } finally {getInstrumentation().runOnMainSync(activity::finish);}
+            evaluate(activity,"document.querySelector('#resultPanel').scrollIntoView();true");
+            Thread.sleep(500);
+            try(FileOutputStream out=new FileOutputStream(new File(activity.getCacheDir(),"android-player.png"))) {
+                getInstrumentation().getUiAutomation().takeScreenshot().compress(Bitmap.CompressFormat.PNG,100,out);
+            }
+            getInstrumentation().runOnMainSync(()->{player.seekTo(0);player.setRepeatMode(Player.REPEAT_MODE_ONE);player.play();});
+            for(int i=0;i<30;i++){AtomicReference<Boolean> playing=new AtomicReference<>(false);getInstrumentation().runOnMainSync(()->playing.set(player.isPlaying()));if(playing.get())break;Thread.sleep(200);}
+            AtomicReference<Long> before=new AtomicReference<>(0L),after=new AtomicReference<>(0L);
+            getInstrumentation().runOnMainSync(()->before.set(player.getCurrentPosition()));
+            getInstrumentation().getUiAutomation().executeShellCommand("input keyevent 3").close();
+            Thread.sleep(1500);
+            AtomicReference<Boolean> background=new AtomicReference<>(false);
+            getInstrumentation().runOnMainSync(()->{background.set(player.isPlaying());after.set(player.getCurrentPosition());});
+            assertTrue("Audio must keep playing while the launcher is in front",background.get());
+            assertTrue("Playback position must advance in background",Math.abs(after.get()-before.get())>500);
+            NotificationManager notifications=activity.getSystemService(NotificationManager.class);
+            assertTrue("Media playback needs an active foreground notification",Arrays.stream(notifications.getActiveNotifications()).anyMatch(item->(item.getNotification().flags&Notification.FLAG_FOREGROUND_SERVICE)!=0));
+            getInstrumentation().getUiAutomation().executeShellCommand("input keyevent 223").close();
+            Thread.sleep(1500);
+            getInstrumentation().runOnMainSync(()->background.set(player.isPlaying()));
+            assertTrue("Audio must keep playing with the screen off",background.get());
+            getInstrumentation().getUiAutomation().executeShellCommand("input keyevent 224").close();
+            getInstrumentation().getUiAutomation().executeShellCommand("wm dismiss-keyguard").close();
+            getInstrumentation().getTargetContext().startActivity(new Intent(getInstrumentation().getTargetContext(),MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_SINGLE_TOP));
+            Thread.sleep(500);
+            getInstrumentation().runOnMainSync(()->{player.pause();player.seekTo(1000);});
+            Thread.sleep(700);
+            assertTrue("Pause from media controller must update the UI",evaluate(activity,"window.KotobaMobile.player.paused").equals("true"));
+            assertTrue("Subtitles must resync after returning",evaluate(activity,"document.querySelector('#subtitleTranslation').textContent.length>0").equals("true"));
+        } finally {
+            getInstrumentation().runOnMainSync(()->{player.pause();player.setRepeatMode(Player.REPEAT_MODE_OFF);player.clearMediaItems();MediaController.releaseFuture(connection);activity.finish();});
+        }
     }
     @Test public void testOfflineVoicesAndPronunciation() throws Exception {
         Context context=getInstrumentation().getTargetContext();
         File files=ModelStorage.prepare(context,message->{});
         SpeechEngine engine=new SpeechEngine(context,files);
         assertTrue(engine.voices().length()>=40);
-        for(String voice:new String[]{"voicevox-11","voicevox-2","voicevox-13"}) {
+        for(String voice:new String[]{"voicevox-11","voicevox-2","voicevox-13","voicevox-21","voicevox-100","voicevox-20","voicevox-27","voicevox-29","voicevox-94","voicevox-11"}) {
             JSONObject request=new JSONObject().put("voice",voice).put("engine","voicevox").put("text","いいえ。大きい青いケーキです。何をしますか？").put("speed",1).put("intonation",1).put("pronunciation","natural");
             byte[] wav=engine.synthesize(context,request);
             assertTrue(wav.length>10000);

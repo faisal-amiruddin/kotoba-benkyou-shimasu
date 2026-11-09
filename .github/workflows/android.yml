@@ -60,7 +60,9 @@ jobs:
           target: google_apis
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -memory 4096
-          script: gradle -p android --no-daemon :app:connectedDebugAndroidTest
+          script: |
+            gradle -p android --no-daemon :app:connectedDebugAndroidTest
+            adb exec-out run-as id.kotoba.studio cat cache/android-player.png > android/android-player.png
       - name: Name APK
         run: cp android/app/build/outputs/apk/debug/app-debug.apk android/app/build/outputs/apk/debug/kotoba-android-local.apk
       - uses: actions/upload-artifact@v4
@@ -76,3 +78,4 @@ jobs:
           path: |
             android/app/build/reports/androidTests/
             android/app/build/outputs/androidTest-results/
+            android/android-player.png

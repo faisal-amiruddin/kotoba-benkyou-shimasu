@@ -181,7 +181,8 @@ ATURAN FORMAT:
     const progressLabel = document.getElementById('progressLabel');
     const progressPercent = document.getElementById('progressPercent');
     const resultPanel = document.getElementById('resultPanel');
-    const audioPlayer = document.getElementById('audioPlayer');
+    const audioElement = document.getElementById('audioPlayer');
+    const audioPlayer = window.KotobaMobile?.createPlayer?.(audioElement) || audioElement;
     const downloadAudio = document.getElementById('downloadAudio');
     const voiceSearchStatus = document.getElementById('voiceSearchStatus');
     const reloadVoicesEl = document.getElementById('reloadVoices');
@@ -513,7 +514,8 @@ ATURAN FORMAT:
         const mergedBlob = mergeWav(chunks, context.sampleRate);
         if (currentAudioUrl) URL.revokeObjectURL(currentAudioUrl);
         currentAudioUrl = URL.createObjectURL(mergedBlob);
-        audioPlayer.src = currentAudioUrl;
+        if (audioPlayer.setSource) await audioPlayer.setSource(mergedBlob, nextTimeline);
+        else audioPlayer.src = currentAudioUrl;
         timeline = nextTimeline;
         activeSubtitle = -1;
         syncSubtitle();
@@ -563,3 +565,15 @@ ATURAN FORMAT:
     });
 
     loadEngines();
+    if (audioPlayer.restore) {
+      audioPlayer.restore().then(session => {
+        if (!session.loaded || !session.timeline?.length) return;
+        timeline = session.timeline;
+        activeSubtitle = -1;
+        syncSubtitle();
+        resultPanel.style.display = 'block';
+        document.getElementById('audioMeta').textContent = `WAV · ${timeline.length} kalimat · audio terakhir`;
+        downloadAudio.href = session.url;
+        downloadAudio.download = 'japanese-dialog.wav';
+      }).catch(() => {});
+    }
