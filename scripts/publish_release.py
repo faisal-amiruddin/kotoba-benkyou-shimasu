@@ -41,11 +41,21 @@ def main():
     def json_request(url, method, value):
         return request(url, method, json.dumps(value).encode(), {'Content-Type': 'application/json'})
 
-    try:
-        release = request(base + '/releases/tags/' + tag)
-    except urllib.error.HTTPError as error:
-        if error.code != 404:
-            raise
+    # The by-tag endpoint only resolves published releases. List authenticated
+    # releases too, so a draft/retried upload is resumed instead of duplicated.
+    release = None
+    page = 1
+    while release is None:
+        releases = request(base + '/releases?per_page=100&page=' + str(page))
+        matches = [item for item in releases if item['tag_name'] == tag]
+        if len(matches) > 1:
+            raise ValueError('Multiple releases use the same tag; resolve before publishing')
+        if matches:
+            release = matches[0]
+        if len(releases) < 100:
+            break
+        page += 1
+    if release is None:
         release = json_request(base + '/releases', 'POST', {'tag_name': tag, 'target_commitish': sha,
                                'name': 'Kotoba Android ' + version, 'body': body, 'draft': True, 'prerelease': False})
     if release['target_commitish'] != sha:
