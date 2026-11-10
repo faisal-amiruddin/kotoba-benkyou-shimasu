@@ -17,7 +17,7 @@ public class AppearanceTest {
     private void waitForTheme(MainActivity activity,String mode) throws Exception {
         String ready="";
         for(int i=0;i<90;i++) {
-            ready=evaluate(activity,"!!document.querySelector('#themeMode') && document.documentElement.dataset.theme==='"+mode+"' && !document.querySelector('#generateAudio').disabled");
+            ready=evaluate(activity,"document.readyState==='complete' && !window.__themeReloadPending && !!document.querySelector('#themeMode') && document.documentElement.dataset.theme==='"+mode+"' && !document.querySelector('#generateAudio').disabled");
             if(ready.equals("true"))break;Thread.sleep(1000);
         }
         assertEquals("Theme should initialize without breaking voice loading","true",ready);
@@ -35,6 +35,7 @@ public class AppearanceTest {
             getInstrumentation().runOnMainSync(()->assertEquals(0,activity.getWindow().getDecorView().getSystemUiVisibility()&View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR));
             String edition=activity.getPackageName().endsWith(".lite")?"lite":"full";
             screenshot(activity,"android-"+edition+"-dark.png");
+            evaluate(activity,"window.__themeReloadPending=true;true");
             getInstrumentation().runOnMainSync(()->findWeb(activity.getWindow().getDecorView()).reload());
             waitForTheme(activity,"dark");
             assertEquals("\"dark\"",evaluate(activity,"document.querySelector('#themeMode').value"));
