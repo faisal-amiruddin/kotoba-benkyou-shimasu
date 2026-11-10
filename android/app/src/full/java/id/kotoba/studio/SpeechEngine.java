@@ -8,6 +8,10 @@ import java.util.Map;
 import org.json.*;
 
 final class SpeechEngine {
+    static SpeechEngine prepare(Context context,java.util.function.Consumer<String> progress) throws Exception {
+        return new SpeechEngine(context,ModelStorage.prepare(context,progress::accept));
+    }
+    boolean available() {return true;}
     private final File root;
     private final JSONArray voices;
     private final Map<Integer,String> models=new HashMap<>();

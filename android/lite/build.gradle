@@ -1,0 +1,14 @@
+plugins { id 'com.android.application' }
+apply from: '../common-android.gradle'
+
+android {
+    defaultConfig {
+        applicationId 'id.kotoba.studio.lite'
+        manifestPlaceholders = [appLabel: 'Kotoba Lite · Belajar Jepang']
+    }
+    sourceSets {
+        main.manifest.srcFile '../app/src/main/AndroidManifest.xml'
+        main.java.srcDirs = ['../app/src/main/java','src/main/java']
+        test.java.srcDir '../app/src/test/java'
+    }
+}

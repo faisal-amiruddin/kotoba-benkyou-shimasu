@@ -15,3 +15,9 @@ android/app/src/main/assets/web/
 android/app/src/main/jniLibs/
 android/app/src/main/cpp/vendor/
 android/test-assets/
+android/app/src/full/assets/voicevox/
+android/app/src/full/jniLibs/
+android/shared-assets/web/
+dist-apk/
+android/apk-sizes.json
+android/screenshots/

@@ -1,0 +1,29 @@
+android {
+    namespace 'id.kotoba.studio'
+    compileSdk 35
+    defaultConfig {
+        applicationId 'id.kotoba.studio'
+        minSdk 26
+        targetSdk 35
+        versionCode 3
+        versionName '1.2.0'
+        testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
+    }
+    compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+    sourceSets {
+        main.assets.srcDirs = [rootProject.file('shared-assets')]
+        androidTest.java.srcDir rootProject.file('shared-tests/java')
+    }
+    signingConfigs { debug { if (System.getenv('KOTOBA_DEBUG_KEYSTORE')) storeFile file(System.getenv('KOTOBA_DEBUG_KEYSTORE')) } }
+    buildTypes { debug { debuggable true }; release { minifyEnabled false } }
+}
+dependencies {
+    implementation 'androidx.webkit:webkit:1.12.1'
+    implementation 'androidx.media3:media3-exoplayer:1.5.1'
+    implementation 'androidx.media3:media3-session:1.5.1'
+    implementation 'com.squareup.okhttp3:okhttp:4.12.0'
+    testImplementation 'junit:junit:4.13.2'
+    testImplementation 'com.squareup.okhttp3:mockwebserver:4.12.0'
+    androidTestImplementation 'androidx.test:runner:1.7.0'
+    androidTestImplementation 'androidx.test.ext:junit:1.3.0'
+}

@@ -11,7 +11,8 @@ import urllib.request
 import zipfile
 
 ROOT=Path(__file__).resolve().parent.parent
-ASSETS=ROOT/'android/app/src/main/assets'
+ASSETS=ROOT/'android/app/src/full/assets'
+SHARED_ASSETS=ROOT/'android/shared-assets'
 CACHE=ROOT/'.setup/android-build-cache'
 MANIFEST=json.loads((ROOT/'shared/voicevox-assets.json').read_text())
 CATALOG=json.loads((ROOT/'shared/voicevox-catalog.json').read_text(encoding='utf-8'))
@@ -42,7 +43,7 @@ def copy_bytes(path,data):
 
 def native(item):
     abi,assets=item
-    destination=ROOT/'android/app/src/main/jniLibs'/abi
+    destination=ROOT/'android/app/src/full/jniLibs'/abi
     with zipfile.ZipFile(fetch(assets['core'])) as archive:
         for name in archive.namelist():
             if name.endswith('/libvoicevox_core.so'):copy_bytes(destination/'libvoicevox_core.so',archive.read(name))
@@ -68,7 +69,7 @@ def model(item):
     with zipfile.ZipFile(source) as archive:return [(filename,character) for character in json.loads(archive.read('metas.json'))]
 
 def main():
-    web=ASSETS/'web'
+    web=SHARED_ASSETS/'web'
     web.mkdir(parents=True,exist_ok=True)
     for name in ('index.html','app.js','platform.js'):shutil.copyfile(ROOT/'public'/name,web/name)
     with ThreadPoolExecutor(max_workers=4) as pool:

@@ -7,7 +7,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.json.JSONObject;
 import static org.junit.Assert.*;
-import static id.kotoba.studio.OfflineSpeechTest.evaluate;
+import static id.kotoba.studio.AndroidTestSupport.*;
 
 @RunWith(AndroidJUnit4.class)
 public class MicrosoftOnlineTest {
@@ -27,6 +27,10 @@ public class MicrosoftOnlineTest {
                 if(ready.equals("true"))break;Thread.sleep(500);
             }
             assertEquals("Nanami and Keita should be selectable", "true",ready);
+            if(activity.getPackageName().endsWith(".lite")) {
+                assertEquals("true",evaluate(activity,"[...document.querySelector('#speechEngine').options].filter(option=>!option.hidden).every(option=>option.value==='online')"));
+                assertFalse(new java.io.File(activity.getFilesDir(),"voicevox").exists());
+            }
             String script="{cowo[1]} こんにちは。今日は何をしますか？\n{romaji[1]} Konnichiwa. Kyou wa nani o shimasu ka?\n{translate[1]} Halo. Hari ini mau melakukan apa?\n{cewe[2]} 一緒に日本語を勉強しましょう。\n{romaji[2]} Issho ni nihongo o benkyou shimashou.\n{translate[2]} Ayo belajar bahasa Jepang bersama.";
             evaluate(activity,"document.querySelector('#dialogInput').value="+JSONObject.quote(script)+";document.querySelector('#dialogInput').dispatchEvent(new Event('input'));document.querySelector('#maleSpeed').value='0.85';document.querySelector('#femaleSpeed').value='0.85';document.querySelector('#generateAudio').click();true");
             String status="";
@@ -37,8 +41,8 @@ public class MicrosoftOnlineTest {
             }
             assertTrue("Real Microsoft synthesis must finish: "+status,status.contains("Sukses!"));
             assertEquals("true",evaluate(activity,"window.KotobaMobile.player.duration>2 && document.querySelector('#downloadAudio').href.startsWith('blob:')"));
-            evaluate(activity,"window.KotobaMobile.player.play();true");Thread.sleep(1200);
-            assertEquals("true",evaluate(activity,"window.KotobaMobile.player.state.playing"));
+            screenshot(activity,activity.getPackageName().endsWith(".lite")?"android-lite-player.png":"android-microsoft-player.png");
+            assertBackgroundPlayback(activity);
             evaluate(activity,"window.KotobaMobile.player.pause();window.KotobaMobile.player.currentTime=window.KotobaMobile.player.duration-0.5;true");Thread.sleep(700);
             assertEquals("\"Ayo belajar bahasa Jepang bersama.\"",evaluate(activity,"document.querySelector('#subtitleTranslation').textContent"));
         } finally {

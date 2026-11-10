@@ -44,12 +44,11 @@ public final class MainActivity extends Activity {
         root.setOnApplyWindowInsetsListener((view,insets)->{view.setPadding(insets.getSystemWindowInsetLeft(),insets.getSystemWindowInsetTop(),insets.getSystemWindowInsetRight(),insets.getSystemWindowInsetBottom());return insets;});
         setContentView(root);
         progress=new TextView(this);progress.setGravity(Gravity.CENTER);progress.setTextSize(17);progress.setPadding(28,28,28,28);
-        progress.setText("Menyiapkan Kotoba lokal…\nPertama kali dibuka, penyiapan model memerlukan waktu.");
+        progress.setText("Menyiapkan "+getApplicationInfo().loadLabel(getPackageManager())+"…");
         root.addView(progress,new FrameLayout.LayoutParams(-1,-1));
         worker.execute(()->{
             try {
-                File models=ModelStorage.prepare(this,message->runOnUiThread(()->progress.setText(message)));
-                engine=new SpeechEngine(this,models);
+                engine=SpeechEngine.prepare(this,message->runOnUiThread(()->progress.setText(message)));
                 runOnUiThread(this::openWeb);
             } catch(Throwable error) { runOnUiThread(()->progress.setText("Penyiapan belum berhasil.\n"+error.getMessage()+"\nTutup dan buka kembali aplikasi untuk mencoba lagi.")); }
         });
@@ -161,7 +160,7 @@ public final class MainActivity extends Activity {
                         } else if(op.equals("session"))saved=PlaybackStore.read(MainActivity.this);
                         playerRequest(id,request,saved);
                     } else if(path.equals("/api/engines")) {
-                        reply(id,200,"application/json","{\"defaultEngine\":\"voicevox\",\"voicevoxAvailable\":true,\"offlineAvailable\":false,\"onlineAvailable\":true}");
+                        reply(id,200,"application/json",new JSONObject().put("defaultEngine",engine.available()?"voicevox":"online").put("voicevoxAvailable",engine.available()).put("offlineAvailable",false).put("onlineAvailable",true).put("edition",engine.available()?"full":"lite").toString());
                     } else if(path.equals("/api/voices?engine=voicevox")) {
                         reply(id,200,"application/json",new JSONObject().put("voices",engine.voices()).toString());
                     } else if(path.equals("/api/voices?engine=online")) {

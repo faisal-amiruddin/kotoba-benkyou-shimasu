@@ -359,6 +359,12 @@ ATURAN FORMAT:
       engineEl.disabled = true;
       try {
         const data = await (await apiRequest('/api/engines')).json();
+        if (data.edition === 'lite') {
+          engineEl.querySelector('[value="voicevox"]').hidden = true;
+          engineEl.querySelector('[value="offline"]').hidden = true;
+          document.querySelector('.brand-name').textContent = 'kotoba lite';
+          document.title = 'Kotoba Lite — Japanese Dialogue Lab';
+        }
         engineEl.querySelector('[value="online"]').disabled = data.onlineAvailable === false;
         engineEl.querySelector('[value="offline"]').disabled = !data.offlineAvailable;
         engineEl.querySelector('[value="voicevox"]').disabled = !data.voicevoxAvailable;

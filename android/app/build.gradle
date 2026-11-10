@@ -1,33 +1,18 @@
 plugins { id 'com.android.application' }
-
+apply from: '../common-android.gradle'
 android {
-    namespace 'id.kotoba.studio'
-    compileSdk 35
     ndkVersion '27.2.12479018'
     defaultConfig {
-        applicationId 'id.kotoba.studio'
-        minSdk 26
-        targetSdk 35
-        versionCode 2
-        versionName '1.1.0'
-        testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
+        manifestPlaceholders = [appLabel: 'Kotoba Full · Belajar Jepang']
         ndk { abiFilters 'arm64-v8a', 'x86_64' }
         externalNativeBuild { cmake { cppFlags '-std=c++17'; arguments '-DANDROID_STL=c++_shared' } }
     }
-    compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+    sourceSets {
+        main.java.srcDir 'src/full/java'
+        main.assets.srcDir 'src/full/assets'
+        main.jniLibs.srcDirs = ['src/full/jniLibs']
+    }
     externalNativeBuild { cmake { path 'src/main/cpp/CMakeLists.txt'; version '3.22.1' } }
     packaging { jniLibs { useLegacyPackaging true; keepDebugSymbols += ['**/libvoicevox_core.so','**/libvoicevox_onnxruntime.so'] } }
     androidResources { noCompress += ['vvm'] }
-    signingConfigs { debug { if (System.getenv('KOTOBA_DEBUG_KEYSTORE')) storeFile file(System.getenv('KOTOBA_DEBUG_KEYSTORE')) } }
-    buildTypes { debug { debuggable true }; release { minifyEnabled false } }
-}
-dependencies {
-    implementation 'androidx.webkit:webkit:1.12.1'
-    implementation 'androidx.media3:media3-exoplayer:1.5.1'
-    implementation 'androidx.media3:media3-session:1.5.1'
-    implementation 'com.squareup.okhttp3:okhttp:4.12.0'
-    testImplementation 'junit:junit:4.13.2'
-    testImplementation 'com.squareup.okhttp3:mockwebserver:4.12.0'
-    androidTestImplementation 'androidx.test:runner:1.7.0'
-    androidTestImplementation 'androidx.test.ext:junit:1.3.0'
 }

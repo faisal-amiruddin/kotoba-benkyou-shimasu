@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
     inputs:
       release_tag:
-        description: 'Publish tested APK to Releases, e.g. v1.1.0 (empty = build only)'
+        description: 'Publish tested Lite and Full APKs, e.g. v1.2.0 (empty = build only)'
         type: string
         required: false
         default: ''
@@ -62,11 +62,17 @@ jobs:
         run: python scripts/prepare_android.py
       - name: Install native build dependencies
         run: sdkmanager "platforms;android-35" "build-tools;35.0.0" "ndk;27.2.12479018" "cmake;3.22.1"
-      - name: Build installable APK and Android tests
-        run: gradle -p android --no-daemon :app:testDebugUnitTest :app:assembleDebug :app:assembleDebugAndroidTest
+      - name: Build Lite and Full APKs and their tests
+        run: gradle -p android --no-daemon :app:testDebugUnitTest :lite:testDebugUnitTest :app:assembleDebug :lite:assembleDebug :app:assembleDebugAndroidTest :lite:assembleDebugAndroidTest
+      - name: Name APKs and verify Lite excludes offline models and libraries
+        run: |
+          mkdir -p dist-apk
+          cp android/app/build/outputs/apk/debug/app-debug.apk dist-apk/kotoba-full.apk
+          cp android/lite/build/outputs/apk/debug/lite-debug.apk dist-apk/kotoba-lite.apk
+          python scripts/inspect_android_apks.py
       - name: Enable emulator acceleration
         run: sudo chmod 666 /dev/kvm
-      - name: Test offline and real Microsoft online synthesis in Android
+      - name: Test both editions, real synthesis, background and screen-off playback
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 35
@@ -75,14 +81,12 @@ jobs:
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -memory 4096
           script: |
-            gradle -p android --no-daemon :app:connectedDebugAndroidTest
-            adb pull /sdcard/Pictures/KotobaTests/android-player.png android/android-player.png
-      - name: Name APK
-        run: cp android/app/build/outputs/apk/debug/app-debug.apk android/app/build/outputs/apk/debug/kotoba-android-local.apk
+            gradle -p android --no-daemon :app:connectedDebugAndroidTest :lite:connectedDebugAndroidTest
+            adb pull /sdcard/Pictures/KotobaTests android/screenshots
       - uses: actions/upload-artifact@v4
         with:
-          name: kotoba-android-local-apk
-          path: android/app/build/outputs/apk/debug/kotoba-android-local.apk
+          name: kotoba-android-apks
+          path: dist-apk/*.apk
           compression-level: 0
           retention-days: 30
       - uses: actions/upload-artifact@v4
@@ -94,7 +98,12 @@ jobs:
             android/app/build/reports/tests/
             android/app/build/test-results/
             android/app/build/outputs/androidTest-results/
-            android/android-player.png
+            android/lite/build/reports/androidTests/
+            android/lite/build/reports/tests/
+            android/lite/build/test-results/
+            android/lite/build/outputs/androidTest-results/
+            android/screenshots/
+            android/apk-sizes.json
   release:
     needs: android
     if: ${{ github.event_name == 'workflow_dispatch' && inputs.release_tag != '' }}
@@ -108,7 +117,7 @@ jobs:
           python-version: '3.11'
       - uses: actions/download-artifact@v4
         with:
-          name: kotoba-android-local-apk
+          name: kotoba-android-apks
           path: release-apk
       - name: Publish APK directly to GitHub Releases
         env:

@@ -17,6 +17,7 @@ import androidx.test.platform.app.InstrumentationRegistry;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import static org.junit.Assert.*;
+import static id.kotoba.studio.AndroidTestSupport.*;
 import org.json.*;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -32,17 +33,6 @@ import java.util.concurrent.atomic.AtomicReference;
 
 @RunWith(AndroidJUnit4.class)
 public class OfflineSpeechTest {
-    private static Instrumentation getInstrumentation() { return InstrumentationRegistry.getInstrumentation(); }
-    private static WebView findWeb(View view) {
-        if(view instanceof WebView)return (WebView)view;
-        if(view instanceof ViewGroup)for(int i=0;i<((ViewGroup)view).getChildCount();i++){WebView found=findWeb(((ViewGroup)view).getChildAt(i));if(found!=null)return found;}
-        return null;
-    }
-    static String evaluate(MainActivity activity,String script) throws Exception {
-        AtomicReference<String> value=new AtomicReference<>("");CountDownLatch latch=new CountDownLatch(1);
-        getInstrumentation().runOnMainSync(()->{WebView web=findWeb(activity.getWindow().getDecorView());if(web==null){latch.countDown();return;}web.evaluateJavascript(script,result->{value.set(result);latch.countDown();});});
-        assertTrue(latch.await(15,TimeUnit.SECONDS));return value.get();
-    }
     @Test public void testWebInterfaceSynthesizesWithoutNetwork() throws Exception {
         Intent intent=new Intent(getInstrumentation().getTargetContext(),MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         MainActivity activity=(MainActivity)getInstrumentation().startActivitySync(intent);

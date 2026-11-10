@@ -17,9 +17,21 @@ Buka http://127.0.0.1:3210. Microsoft Edge online dapat digunakan tanpa model lo
 VOICEVOX memakai runtime lokal Python dan model resmi. Folder runtime, hasil audio,
 dan dependency lokal tidak dimasukkan ke Git. Rincian versi laptop ada di `README.txt`.
 
-## Android lokal
+## Android Lite dan Full
 
-Aplikasi Android 8.0+ untuk **ARM64** (termasuk target Tecno Camon 40 Pro 5G),
+Dua APK tersedia langsung di [GitHub Releases](https://github.com/faisal-amiruddin/kotoba-benkyou-shimasu/releases/latest):
+
+| Versi | Provider | Unduh langsung |
+| --- | --- | --- |
+| Lite | Microsoft online: Nanami dan Keita; tanpa model/kamus/library native VOICEVOX | [kotoba-lite.apk](https://github.com/faisal-amiruddin/kotoba-benkyou-shimasu/releases/latest/download/kotoba-lite.apk) |
+| Full | Microsoft online + VOICEVOX offline | [kotoba-full.apk](https://github.com/faisal-amiruddin/kotoba-benkyou-shimasu/releases/latest/download/kotoba-full.apk) |
+
+Background playback, kontrol notifikasi, layar mati, dan subtitle sinkron tersedia
+pada keduanya. Lite memakai ID `id.kotoba.studio.lite`; Full tetap memakai
+`id.kotoba.studio` sehingga dapat memperbarui versi lama. Keduanya bisa dipasang
+bersamaan, dengan data terpisah. Lite langsung membuka UI tanpa menyiapkan model.
+
+Full adalah aplikasi Android 8.0+ untuk **ARM64** (termasuk target Tecno Camon 40 Pro 5G),
 dengan ABI x86_64 untuk pengujian emulator. VOICEVOX CORE, ONNX Runtime CPU,
 kamus Jepang, dan semua paket suara yang dipilih dibundel dalam APK.
 Aplikasi tidak memerlukan laptop/server. Pilih **VOICEVOX offline** atau
@@ -27,7 +39,7 @@ Aplikasi tidak memerlukan laptop/server. Pilih **VOICEVOX offline** atau
 digunakan Microsoft online saat preview/generate; VOICEVOX tetap diproses di HP.
 
 - UI dan parser dialog memakai file web yang sama dengan versi laptop.
-- Pertama kali dibuka, model disiapkan ke penyimpanan internal. Sediakan sekitar
+- Pada Full, pertama kali dibuka model disiapkan ke penyimpanan internal. Sediakan sekitar
   1,5 GB ruang kosong untuk APK dan model; APK berukuran besar karena berisi model offline.
 - Pilih suara cowok/cewek dan gayanya, lalu Preview atau Generate.
 - Microsoft online mengirim kalimat Jepang ke layanan Microsoft melalui HTTPS/WSS.
@@ -45,16 +57,18 @@ digunakan Microsoft online saat preview/generate; VOICEVOX tetap diproses di HP.
 ### Build di GitHub Actions
 
 Unduh APK langsung dari [GitHub Releases](https://github.com/faisal-amiruddin/kotoba-benkyou-shimasu/releases/latest).
-Pilih file **kotoba-android.apk** di Assets; tidak perlu ZIP.
+Pilih file **kotoba-lite.apk** atau **kotoba-full.apk** di Assets; tidak perlu ZIP.
 
 Workflow **Build Android APK** berjalan saat push ke `main` atau lewat
 Actions → Run workflow. Workflow mengunduh aset resmi dengan SHA-256 yang dipin,
 menjalankan tes web/pelafalan, membangun APK, dan mengetes sintesis serta alur WebView
 pada emulator Android x86_64, termasuk pemutaran saat aplikasi di latar belakang dan
 layar mati, serta sintesis Microsoft online Nanami/Keita yang sesungguhnya.
-Artifact **kotoba-android-local-apk** tetap tersedia untuk build biasa.
+Artifact **kotoba-android-apks** memuat kedua APK untuk build biasa. CI memeriksa
+bahwa Lite tidak berisi `.vvm`, kamus, JNI VOICEVOX, atau library native dan
+menjalankan tes background/layar mati serta sintesis online pada kedua aplikasi.
 Untuk menerbitkan APK langsung, jalankan workflow manual dengan `release_tag`
-sesuai `versionName` (misalnya `v1.1.0`) dan siapkan catatan di `release-notes/`.
+sesuai `versionName` di `android/common-android.gradle` (misalnya `v1.2.0`) dan siapkan catatan di `release-notes/`.
 Publikasi hanya berjalan setelah semua tes lolos, dengan APK dan checksum SHA-256.
 
 APK ini build debug untuk pemasangan pribadi. Kunci debug disimpan lewat cache CI;
@@ -66,7 +80,7 @@ dan CMake 3.22.1:
 
 ```sh
 python scripts/prepare_android.py
-gradle -p android :app:assembleDebug
+gradle -p android :app:assembleDebug :lite:assembleDebug
 ```
 
 ## Pelafalan
