@@ -9,11 +9,11 @@
     pending.delete(id);
     clearTimeout(item.timer);
     if (type === 'application/x-kotoba-audio') {
-      const path = JSON.parse(body).path;
+      const {path, mime = 'audio/wav'} = JSON.parse(body);
       try {
         const response = await fetch(path);
         if (!response.ok) throw new Error('File audio lokal tidak dapat dibuka.');
-        item.resolve(new Response(await response.blob(), {status, headers:{'Content-Type':'audio/wav'}}));
+        item.resolve(new Response(await response.blob(), {status, headers:{'Content-Type':mime}}));
       } catch(error) { item.reject(error); }
       finally { window.KotobaAndroid.releaseAudio(path); }
       return;

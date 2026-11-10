@@ -32,13 +32,13 @@ import java.util.concurrent.atomic.AtomicReference;
 
 @RunWith(AndroidJUnit4.class)
 public class OfflineSpeechTest {
-    private Instrumentation getInstrumentation() { return InstrumentationRegistry.getInstrumentation(); }
-    private WebView findWeb(View view) {
+    private static Instrumentation getInstrumentation() { return InstrumentationRegistry.getInstrumentation(); }
+    private static WebView findWeb(View view) {
         if(view instanceof WebView)return (WebView)view;
         if(view instanceof ViewGroup)for(int i=0;i<((ViewGroup)view).getChildCount();i++){WebView found=findWeb(((ViewGroup)view).getChildAt(i));if(found!=null)return found;}
         return null;
     }
-    private String evaluate(MainActivity activity,String script) throws Exception {
+    static String evaluate(MainActivity activity,String script) throws Exception {
         AtomicReference<String> value=new AtomicReference<>("");CountDownLatch latch=new CountDownLatch(1);
         getInstrumentation().runOnMainSync(()->{WebView web=findWeb(activity.getWindow().getDecorView());if(web==null){latch.countDown();return;}web.evaluateJavascript(script,result->{value.set(result);latch.countDown();});});
         assertTrue(latch.await(15,TimeUnit.SECONDS));return value.get();

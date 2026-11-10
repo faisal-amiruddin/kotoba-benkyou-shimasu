@@ -26,6 +26,7 @@ public final class MainActivity extends Activity {
     private final Map<String,Save> saves=new ConcurrentHashMap<>();
     private WebView web;
     private SpeechEngine engine;
+    private final MicrosoftSpeech microsoft=new MicrosoftSpeech();
     private FrameLayout root;
     private TextView progress;
     private Save choosingSave;
@@ -70,7 +71,7 @@ public final class MainActivity extends Activity {
             })
             .addPathHandler("/generated/",path->{
                 File file=audioFiles.get("/generated/"+path);
-                try {return file==null?null:new WebResourceResponse("audio/wav",null,new FileInputStream(file));}catch(IOException error){return null;}
+                try {return file==null?null:new WebResourceResponse(file.getName().endsWith(".mp3")?"audio/mpeg":"audio/wav",null,new FileInputStream(file));}catch(IOException error){return null;}
             })
             .addPathHandler("/",path->{
                 String file=path.isEmpty()?"index.html":path;
@@ -160,18 +161,33 @@ public final class MainActivity extends Activity {
                         } else if(op.equals("session"))saved=PlaybackStore.read(MainActivity.this);
                         playerRequest(id,request,saved);
                     } else if(path.equals("/api/engines")) {
-                        reply(id,200,"application/json","{\"defaultEngine\":\"voicevox\",\"voicevoxAvailable\":true,\"offlineAvailable\":false,\"onlineAvailable\":false}");
+                        reply(id,200,"application/json","{\"defaultEngine\":\"voicevox\",\"voicevoxAvailable\":true,\"offlineAvailable\":false,\"onlineAvailable\":true}");
                     } else if(path.equals("/api/voices?engine=voicevox")) {
                         reply(id,200,"application/json",new JSONObject().put("voices",engine.voices()).toString());
+                    } else if(path.equals("/api/voices?engine=online")) {
+                        JSONArray voices=new JSONArray();
+                        voices.put(new JSONObject().put("ShortName","ja-JP-KeitaNeural").put("FriendlyName","Keita · Microsoft online").put("Gender","Male").put("Locale","ja-JP"));
+                        voices.put(new JSONObject().put("ShortName","ja-JP-NanamiNeural").put("FriendlyName","Nanami · Microsoft online").put("Gender","Female").put("Locale","ja-JP"));
+                        reply(id,200,"application/json",new JSONObject().put("voices",voices).toString());
                     } else if(path.equals("/api/synthesize")) {
                         runOnUiThread(()->getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON));
                         try {
-                            byte[] wav=engine.synthesize(MainActivity.this,new JSONObject(body));
-                            String key="/generated/"+UUID.randomUUID()+".wav";
-                            File file=File.createTempFile("kotoba-audio-",".wav",getCacheDir());
-                            try(FileOutputStream out=new FileOutputStream(file)){out.write(wav);}
+                            JSONObject request=new JSONObject(body);
+                            String provider=request.optString("engine","voicevox");
+                            byte[] audio;String extension,mime;
+                            if(provider.equals("online")) {
+                                Object rate=request.opt("speed");
+                                if(rate!=null&&!(rate instanceof Number))throw new IllegalArgumentException("Tempo harus berupa angka.");
+                                audio=microsoft.synthesize(request.optString("text",""),request.optString("voice",""),rate==null?1:((Number)rate).doubleValue());
+                                extension=".mp3";mime="audio/mpeg";
+                            } else {
+                                audio=engine.synthesize(MainActivity.this,request);extension=".wav";mime="audio/wav";
+                            }
+                            String key="/generated/"+UUID.randomUUID()+extension;
+                            File file=File.createTempFile("kotoba-audio-",extension,getCacheDir());
+                            try(FileOutputStream out=new FileOutputStream(file)){out.write(audio);}
                             audioFiles.put(key,file);
-                            reply(id,200,"application/x-kotoba-audio",new JSONObject().put("path",key).toString());
+                            reply(id,200,"application/x-kotoba-audio",new JSONObject().put("path",key).put("mime",mime).toString());
                         } finally {runOnUiThread(()->getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON));}
                     } else reply(id,404,"application/json","{\"error\":\"Fitur ini tidak tersedia di versi Android lokal.\"}");
                 } catch(Throwable error) {reply(id,502,"application/json","{\"error\":"+JSONObject.quote(error.getMessage()==null?"Gagal membuat audio lokal.":error.getMessage())+"}");}
@@ -184,7 +200,7 @@ public final class MainActivity extends Activity {
                 String name=filename.replaceAll("[^a-zA-Z0-9._-]","_");
                 if(name.isEmpty()||name.length()>160) return "";
                 String id=UUID.randomUUID().toString();
-                saves.put(id,new Save(File.createTempFile("kotoba-save-",".tmp",getCacheDir()),name,mime));
+                saves.put(id,new Save(File.createTempFile("kotoba-save-",".tmp",getCacheDir()),name,mime.split(";",2)[0]));
                 return id;
             }catch(Exception error){return "";}
         }
@@ -224,6 +240,7 @@ public final class MainActivity extends Activity {
     @Override protected void onDestroy() {
         if(controllerFuture!=null)MediaController.releaseFuture(controllerFuture);
         if(web!=null){web.removeJavascriptInterface("KotobaAndroid");web.destroy();web=null;}
+        worker.execute(()->microsoft.close());
         worker.shutdown();
         for(File file:audioFiles.values())file.delete();
         for(Save save:saves.values())discard(save);

@@ -22,12 +22,17 @@ dan dependency lokal tidak dimasukkan ke Git. Rincian versi laptop ada di `READM
 Aplikasi Android 8.0+ untuk **ARM64** (termasuk target Tecno Camon 40 Pro 5G),
 dengan ABI x86_64 untuk pengujian emulator. VOICEVOX CORE, ONNX Runtime CPU,
 kamus Jepang, dan semua paket suara yang dipilih dibundel dalam APK.
-Aplikasi ini tidak meminta izin internet dan tidak memerlukan laptop/server.
+Aplikasi tidak memerlukan laptop/server. Pilih **VOICEVOX offline** atau
+**Microsoft Edge online** (Nanami dan Keita langsung dari HP). Izin internet
+digunakan Microsoft online saat preview/generate; VOICEVOX tetap diproses di HP.
 
 - UI dan parser dialog memakai file web yang sama dengan versi laptop.
 - Pertama kali dibuka, model disiapkan ke penyimpanan internal. Sediakan sekitar
   1,5 GB ruang kosong untuk APK dan model; APK berukuran besar karena berisi model offline.
 - Pilih suara cowok/cewek dan gayanya, lalu Preview atau Generate.
+- Microsoft online mengirim kalimat Jepang ke layanan Microsoft melalui HTTPS/WSS.
+  Romaji dan terjemahan tidak dibacakan. Setelah audio dibuat, pemutaran tidak
+  memerlukan internet, termasuk di background.
 - Download WAV dan kredit suara membuka pemilih lokasi penyimpanan Android.
 - Pemutaran memakai layanan media native: audio tetap berjalan saat membuka aplikasi
   lain atau mengunci layar, dengan play/pause dan seek di kontrol media Android.
@@ -39,11 +44,18 @@ Aplikasi ini tidak meminta izin internet dan tidak memerlukan laptop/server.
 
 ### Build di GitHub Actions
 
-Workflow **Build Android local APK** berjalan saat push ke `main` atau lewat
+Unduh APK langsung dari [GitHub Releases](https://github.com/faisal-amiruddin/kotoba-benkyou-shimasu/releases/latest).
+Pilih file **kotoba-android.apk** di Assets; tidak perlu ZIP.
+
+Workflow **Build Android APK** berjalan saat push ke `main` atau lewat
 Actions → Run workflow. Workflow mengunduh aset resmi dengan SHA-256 yang dipin,
 menjalankan tes web/pelafalan, membangun APK, dan mengetes sintesis serta alur WebView
 pada emulator Android x86_64, termasuk pemutaran saat aplikasi di latar belakang dan
-layar mati. Unduh artifact **kotoba-android-local-apk** setelah hijau.
+layar mati, serta sintesis Microsoft online Nanami/Keita yang sesungguhnya.
+Artifact **kotoba-android-local-apk** tetap tersedia untuk build biasa.
+Untuk menerbitkan APK langsung, jalankan workflow manual dengan `release_tag`
+sesuai `versionName` (misalnya `v1.1.0`) dan siapkan catatan di `release-notes/`.
+Publikasi hanya berjalan setelah semua tes lolos, dengan APK dan checksum SHA-256.
 
 APK ini build debug untuk pemasangan pribadi. Kunci debug disimpan lewat cache CI;
 untuk distribusi produksi gunakan signing key rilis sendiri. Pengujian emulator

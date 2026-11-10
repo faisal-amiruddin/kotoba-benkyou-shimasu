@@ -1,8 +1,14 @@
-name: Build Android local APK
+name: Build Android APK
 on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Publish tested APK to Releases, e.g. v1.1.0 (empty = build only)'
+        type: string
+        required: false
+        default: ''
 permissions:
   contents: read
 concurrency:
@@ -57,10 +63,10 @@ jobs:
       - name: Install native build dependencies
         run: sdkmanager "platforms;android-35" "build-tools;35.0.0" "ndk;27.2.12479018" "cmake;3.22.1"
       - name: Build installable APK and Android tests
-        run: gradle -p android --no-daemon :app:assembleDebug :app:assembleDebugAndroidTest
+        run: gradle -p android --no-daemon :app:testDebugUnitTest :app:assembleDebug :app:assembleDebugAndroidTest
       - name: Enable emulator acceleration
         run: sudo chmod 666 /dev/kvm
-      - name: Test actual offline synthesis in Android
+      - name: Test offline and real Microsoft online synthesis in Android
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 35
@@ -85,5 +91,27 @@ jobs:
           name: android-test-reports
           path: |
             android/app/build/reports/androidTests/
+            android/app/build/reports/tests/
+            android/app/build/test-results/
             android/app/build/outputs/androidTest-results/
             android/android-player.png
+  release:
+    needs: android
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.release_tag != '' }}
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/download-artifact@v4
+        with:
+          name: kotoba-android-local-apk
+          path: release-apk
+      - name: Publish APK directly to GitHub Releases
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: python scripts/publish_release.py
