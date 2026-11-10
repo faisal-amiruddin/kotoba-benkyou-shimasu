@@ -5,13 +5,14 @@ android {
         applicationId 'id.kotoba.studio'
         minSdk 26
         targetSdk 35
-        versionCode 3
-        versionName '1.2.0'
+        versionCode 4
+        versionName '1.3.0'
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
     }
     compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
     sourceSets {
         main.assets.srcDirs = [rootProject.file('shared-assets')]
+        main.res.srcDir rootProject.file('shared-res')
         androidTest.java.srcDir rootProject.file('shared-tests/java')
     }
     signingConfigs { debug { if (System.getenv('KOTOBA_DEBUG_KEYSTORE')) storeFile file(System.getenv('KOTOBA_DEBUG_KEYSTORE')) } }

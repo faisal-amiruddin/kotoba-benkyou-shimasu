@@ -1,0 +1,8 @@
+Built-in image_gen, logo-brand, transparent Android adaptive launcher foreground.
+
+Use case: logo-brand. Asset type: production Android adaptive launcher icon foreground for Kotoba, a Japanese dialogue listening practice app. Create one clean bold flat vector-like emblem: a warm ivory rounded speech bubble containing the accurately written Japanese kanji 言 in dark forest green, with a small coral audio-wave accent integrated into the bubble tail. Strong simple silhouette, thick confident strokes, legible at 48 pixels. Transparent background, no surrounding app tile, no outer rounded-square frame, no mockup, no drop shadow, no gradients, no other text or objects. Center the complete emblem within the middle 55 percent of a square canvas with generous transparent padding on every side for Android icon masks. Palette: ivory #FFF4DA, forest green #315B47, coral #D67D66. Return just the finished icon asset.
+
+Refinement prompt:
+Refine this Android icon foreground only: preserve the speech bubble, the Japanese 言 character, the coral sound-wave tail, colors, composition, and transparent padding. Make all contours perfectly clean and smooth. Remove every stray speck, light fringe, ghost mark, texture and artifact outside the emblem. Use uniform flat fills with no texture or gradients. Keep a genuinely transparent background and the same emblem size and position. No new elements or text.
+
+Source: kotoba-icon-foreground.png. Android drawable is a 432px density-independent export. No semantic edits were applied outside image_gen.

@@ -24,7 +24,7 @@ import static org.junit.Assert.*;
 
 final class AndroidTestSupport {
     static Instrumentation getInstrumentation() {return InstrumentationRegistry.getInstrumentation();}
-    private static WebView findWeb(View view) {
+    static WebView findWeb(View view) {
         if(view instanceof WebView)return (WebView)view;
         if(view instanceof ViewGroup)for(int i=0;i<((ViewGroup)view).getChildCount();i++){WebView found=findWeb(((ViewGroup)view).getChildAt(i));if(found!=null)return found;}
         return null;
@@ -36,9 +36,12 @@ final class AndroidTestSupport {
     }
     static void screenshot(MainActivity activity,String name) throws Exception {
         evaluate(activity,"document.querySelector('#resultPanel').scrollIntoView();true");Thread.sleep(300);
+        saveBitmap(activity,name,getInstrumentation().getUiAutomation().takeScreenshot());
+    }
+    static void saveBitmap(MainActivity activity,String name,Bitmap bitmap) throws Exception {
         ContentValues image=new ContentValues();image.put(MediaStore.Images.Media.DISPLAY_NAME,name);image.put(MediaStore.Images.Media.MIME_TYPE,"image/png");image.put(MediaStore.Images.Media.RELATIVE_PATH,"Pictures/KotobaTests");
         android.net.Uri uri=activity.getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,image);
-        try(java.io.OutputStream out=activity.getContentResolver().openOutputStream(uri)){getInstrumentation().getUiAutomation().takeScreenshot().compress(Bitmap.CompressFormat.PNG,100,out);}
+        try(java.io.OutputStream out=activity.getContentResolver().openOutputStream(uri)){bitmap.compress(Bitmap.CompressFormat.PNG,100,out);}
     }
     static void assertBackgroundPlayback(MainActivity activity) throws Exception {
         Instrumentation instrumentation=getInstrumentation();

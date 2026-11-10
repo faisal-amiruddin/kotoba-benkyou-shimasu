@@ -21,6 +21,7 @@ test('TTS API validates requests before generating audio', { timeout: 15000 }, a
     assert.ok(html.includes('value="voicevox"'));
     assert.ok(html.includes('id="voicevoxIntonation"'));
     assert.equal((await fetch(base + '/app.js')).status, 200);
+    assert.equal((await fetch(base + '/theme.js')).status, 200);
     assert.equal((await post('/api/voicestudio/voices', {})).status, 404);
     assert.equal((await fetch(base + '/assets/school-bell.mp3')).status, 404);
     for (const speed of [0.5, 2.1, '1', null]) {

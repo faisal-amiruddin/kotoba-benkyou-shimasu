@@ -119,7 +119,7 @@ const server = http.createServer(async (req, res) => {
       return send(res, 200, html, 'text/html; charset=utf-8');
     }
 
-    if (req.method === 'GET' && ['/app.js', '/platform.js'].includes(url.pathname)) {
+    if (req.method === 'GET' && ['/app.js', '/platform.js', '/theme.js'].includes(url.pathname)) {
       return send(res, 200, await readFile(path.join(__dirname, 'public', url.pathname.slice(1))), 'text/javascript; charset=utf-8');
     }
 

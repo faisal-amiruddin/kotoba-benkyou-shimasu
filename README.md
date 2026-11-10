@@ -31,6 +31,12 @@ pada keduanya. Lite memakai ID `id.kotoba.studio.lite`; Full tetap memakai
 `id.kotoba.studio` sehingga dapat memperbarui versi lama. Keduanya bisa dipasang
 bersamaan, dengan data terpisah. Lite langsung membuka UI tanpa menyiapkan model.
 
+Web dan kedua aplikasi langsung membuka kartu Prompt generator tanpa header/hero
+dan alur tiga langkah. Pilih **Tema → Ikuti perangkat / Terang / Gelap** di kartu
+tersebut. Preferensi tersimpan dan tema Android juga menyesuaikan system bar serta
+layar penyiapan. Ikon adaptive berasal dari `assets/branding/kotoba-icon-foreground.png`;
+prompt imagegen disimpan di `assets/branding/icon-prompt.txt`.
+
 Full adalah aplikasi Android 8.0+ untuk **ARM64** (termasuk target Tecno Camon 40 Pro 5G),
 dengan ABI x86_64 untuk pengujian emulator. VOICEVOX CORE, ONNX Runtime CPU,
 kamus Jepang, dan semua paket suara yang dipilih dibundel dalam APK.

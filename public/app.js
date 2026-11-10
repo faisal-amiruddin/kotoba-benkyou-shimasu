@@ -362,7 +362,6 @@ ATURAN FORMAT:
         if (data.edition === 'lite') {
           engineEl.querySelector('[value="voicevox"]').hidden = true;
           engineEl.querySelector('[value="offline"]').hidden = true;
-          document.querySelector('.brand-name').textContent = 'kotoba lite';
           document.title = 'Kotoba Lite — Japanese Dialogue Lab';
         }
         engineEl.querySelector('[value="online"]').disabled = data.onlineAvailable === false;

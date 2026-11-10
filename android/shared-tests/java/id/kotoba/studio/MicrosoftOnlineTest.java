@@ -27,6 +27,7 @@ public class MicrosoftOnlineTest {
                 if(ready.equals("true"))break;Thread.sleep(500);
             }
             assertEquals("Nanami and Keita should be selectable", "true",ready);
+            evaluate(activity,"document.querySelector('#themeMode').value='dark';document.querySelector('#themeMode').dispatchEvent(new Event('change'));true");
             if(activity.getPackageName().endsWith(".lite")) {
                 assertEquals("true",evaluate(activity,"[...document.querySelector('#speechEngine').options].filter(option=>!option.hidden).every(option=>option.value==='online')"));
                 assertFalse(new java.io.File(activity.getFilesDir(),"voicevox").exists());
@@ -46,7 +47,7 @@ public class MicrosoftOnlineTest {
             evaluate(activity,"window.KotobaMobile.player.pause();window.KotobaMobile.player.currentTime=window.KotobaMobile.player.duration-0.5;true");Thread.sleep(700);
             assertEquals("\"Ayo belajar bahasa Jepang bersama.\"",evaluate(activity,"document.querySelector('#subtitleTranslation').textContent"));
         } finally {
-            evaluate(activity,"window.KotobaMobile.player.pause();localStorage.removeItem('kotoba-speech-engine');localStorage.removeItem('kotoba-tempo');true");
+            evaluate(activity,"window.KotobaMobile.player.pause();localStorage.removeItem('kotoba-speech-engine');localStorage.removeItem('kotoba-tempo');document.querySelector('#themeMode').value='auto';document.querySelector('#themeMode').dispatchEvent(new Event('change'));true");
             instrumentation.runOnMainSync(activity::finish);
         }
     }

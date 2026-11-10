@@ -15,7 +15,7 @@ def main():
         for name in names:
             if name.endswith('.dex') and b'Lid/kotoba/studio/NativeSpeech;' in archive.read(name):
                 raise ValueError('VOICEVOX JNI class leaked into Lite')
-        if not all('assets/web/' + name in names for name in ('index.html', 'app.js', 'platform.js')):
+        if not all('assets/web/' + name in names for name in ('index.html', 'app.js', 'platform.js', 'theme.js')):
             raise ValueError('Lite is missing its local UI')
     with zipfile.ZipFile(full) as archive:
         names = set(archive.namelist())

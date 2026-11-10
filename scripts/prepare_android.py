@@ -71,7 +71,7 @@ def model(item):
 def main():
     web=SHARED_ASSETS/'web'
     web.mkdir(parents=True,exist_ok=True)
-    for name in ('index.html','app.js','platform.js'):shutil.copyfile(ROOT/'public'/name,web/name)
+    for name in ('index.html','app.js','platform.js','theme.js'):shutil.copyfile(ROOT/'public'/name,web/name)
     with ThreadPoolExecutor(max_workers=4) as pool:
         list(pool.map(native,MANIFEST['native'].items()))
         characters=[entry for group in pool.map(model,MANIFEST['models'].items()) for entry in group]

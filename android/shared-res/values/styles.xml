@@ -1,0 +1,13 @@
+<resources>
+    <color name="icon_background">#315B47</color>
+    <color name="app_background">#F6F4EF</color>
+    <bool name="light_system_bars">true</bool>
+    <style name="Theme.Kotoba" parent="android:style/Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/app_background</item>
+        <item name="android:statusBarColor">@color/app_background</item>
+        <item name="android:navigationBarColor">@color/app_background</item>
+        <item name="android:windowLightStatusBar">@bool/light_system_bars</item>
+        <item name="android:windowLightNavigationBar">@bool/light_system_bars</item>
+        <item name="android:colorAccent">#315B47</item>
+    </style>
+</resources>

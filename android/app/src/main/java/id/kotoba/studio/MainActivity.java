@@ -10,6 +10,8 @@ import android.webkit.*;
 import android.view.*;
 import android.widget.*;
 import androidx.webkit.WebViewAssetLoader;
+import androidx.webkit.WebSettingsCompat;
+import androidx.webkit.WebViewFeature;
 import androidx.media3.common.Player;
 import androidx.media3.session.MediaController;
 import androidx.media3.session.SessionToken;
@@ -29,6 +31,7 @@ public final class MainActivity extends Activity {
     private final MicrosoftSpeech microsoft=new MicrosoftSpeech();
     private FrameLayout root;
     private TextView progress;
+    private boolean darkAppearance;
     private Save choosingSave;
     private MediaController controller;
     private ListenableFuture<MediaController> controllerFuture;
@@ -46,12 +49,31 @@ public final class MainActivity extends Activity {
         progress=new TextView(this);progress.setGravity(Gravity.CENTER);progress.setTextSize(17);progress.setPadding(28,28,28,28);
         progress.setText("Menyiapkan "+getApplicationInfo().loadLabel(getPackageManager())+"…");
         root.addView(progress,new FrameLayout.LayoutParams(-1,-1));
+        applyAppearance(getSharedPreferences("appearance",MODE_PRIVATE).getString("mode","auto"));
         worker.execute(()->{
             try {
                 engine=SpeechEngine.prepare(this,message->runOnUiThread(()->progress.setText(message)));
                 runOnUiThread(this::openWeb);
             } catch(Throwable error) { runOnUiThread(()->progress.setText("Penyiapan belum berhasil.\n"+error.getMessage()+"\nTutup dan buka kembali aplikasi untuk mencoba lagi.")); }
         });
+    }
+    private boolean systemDark() {
+        return (getResources().getConfiguration().uiMode&android.content.res.Configuration.UI_MODE_NIGHT_MASK)==android.content.res.Configuration.UI_MODE_NIGHT_YES;
+    }
+    private void applyAppearance(String mode) {
+        darkAppearance="dark".equals(mode)||("auto".equals(mode)&&systemDark());
+        int background=Color.parseColor(darkAppearance?"#111814":"#f6f4ef");
+        getWindow().setStatusBarColor(background);getWindow().setNavigationBarColor(background);
+        View decor=getWindow().getDecorView();
+        int lightFlags=View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR|View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
+        decor.setSystemUiVisibility(darkAppearance?decor.getSystemUiVisibility()&~lightFlags:decor.getSystemUiVisibility()|lightFlags);
+        if(android.os.Build.VERSION.SDK_INT>=30&&getWindow().getInsetsController()!=null) {
+            int appearance=WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS|WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS;
+            getWindow().getInsetsController().setSystemBarsAppearance(darkAppearance?0:appearance,appearance);
+        }
+        if(root!=null)root.setBackgroundColor(background);
+        if(web!=null)web.setBackgroundColor(background);
+        if(progress!=null)progress.setTextColor(Color.parseColor(darkAppearance?"#e8eee9":"#20251f"));
     }
     @SuppressWarnings("SetJavaScriptEnabled") private void openWeb() {
         if(isDestroyed())return;
@@ -62,7 +84,8 @@ public final class MainActivity extends Activity {
         web.getSettings().setAllowContentAccess(false);
         web.getSettings().setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
         web.getSettings().setMediaPlaybackRequiresUserGesture(false);
-        web.setBackgroundColor(Color.rgb(247,245,240));
+        web.setBackgroundColor(Color.parseColor(darkAppearance?"#111814":"#f6f4ef"));
+        if(WebViewFeature.isFeatureSupported(WebViewFeature.ALGORITHMIC_DARKENING))WebSettingsCompat.setAlgorithmicDarkeningAllowed(web.getSettings(),false);
         WebViewAssetLoader loader=new WebViewAssetLoader.Builder()
             .addPathHandler("/playback/",path->{
                 if(!path.matches("[a-f0-9-]+\\.wav"))return null;
@@ -74,7 +97,7 @@ public final class MainActivity extends Activity {
             })
             .addPathHandler("/",path->{
                 String file=path.isEmpty()?"index.html":path;
-                if(!Arrays.asList("index.html","app.js","platform.js").contains(file)) return null;
+                if(!Arrays.asList("index.html","app.js","platform.js","theme.js").contains(file)) return null;
                 try {return new WebResourceResponse(file.endsWith(".html")?"text/html":"text/javascript","UTF-8",getAssets().open("web/"+file));}catch(IOException error){return null;}
             }).build();
         web.setWebViewClient(new WebViewClient(){
@@ -134,6 +157,13 @@ public final class MainActivity extends Activity {
     }
     private String newError(Throwable error) {return "{\"error\":"+JSONObject.quote(error.getMessage()==null?"Gagal memproses audio lokal.":error.getMessage())+"}";}
     private final class Bridge {
+        @JavascriptInterface public String getThemeMode() {return getSharedPreferences("appearance",MODE_PRIVATE).getString("mode","auto");}
+        @JavascriptInterface public boolean isSystemDark() {return systemDark();}
+        @JavascriptInterface public void setThemeMode(String mode) {
+            if(!Arrays.asList("auto","light","dark").contains(mode))return;
+            getSharedPreferences("appearance",MODE_PRIVATE).edit().putString("mode",mode).apply();
+            runOnUiThread(()->applyAppearance(mode));
+        }
         @JavascriptInterface public void request(int id,String path,String body) {
             if(path==null||body==null||body.length()>1024*1024) {reply(id,400,"application/json","{\"error\":\"Permintaan tidak valid.\"}");return;}
             worker.execute(()->{
